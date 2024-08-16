@@ -14,3 +14,4 @@ export const SUBSCRIPTION_PLANS = "api/subscription-plans";
 export const PLAN_DETAILS = "api/plan-detail/";
 export const STRIPE_PAYMENT = "api/payment/stripe";
 export const STRIPE_PAYMENT_SUCCESS = "api/payment/stripe/success";
+export const USER_VIDEOS = "api/user/allVideos";

@@ -5,7 +5,10 @@ import VideoItem from "../Components/VideoItem";
 import card3 from "../assets/images/card3.jpg";
 
 import axios from "axios";
-import { STORAGE } from "../utility/api";
+import { STORAGE, USER_VIDEOS } from "../utility/api";
+import VideoThumbnail from "react-video-thumbnail";
+import { useSelector ,useDispatch} from "react-redux";
+import { fetchVideosAction } from "../store/videos";
 
 const videos = [
   {
@@ -30,11 +33,17 @@ function Storage({
   SmallhandleToggle,
   SmallhandleToggleRemove,
 }) {
-
+  const [storage, setStorage] = useState({memory:null,videos:[]});
+  const videos = useSelector(state => state.videos.videos);
+  const dispatch = useDispatch();
   useEffect(()=>{
     const fetchStorage = async () => {
-      let response = await axios.get(STORAGE);
-      console.log(response);
+      let storageUsage = await axios.get(STORAGE);
+      dispatch(fetchVideosAction());
+      storageUsage = storageUsage.data;
+      setStorage((state) => {
+        return {...state, memory:storageUsage};
+      });
     }
     fetchStorage();
   },[]);
@@ -66,6 +75,7 @@ function Storage({
 
   return (
     <>
+
       <main>
         <UserSidebar
           sidebarRef={sidebarRef}
@@ -100,20 +110,32 @@ function Storage({
                       </div>
                     </div>
                     <div className="d-lg-flex justify-content-between align-items-center">
-                    <p className="mb-4">
-                      Video storage capacity depends on the subscription plan.
-                    </p>
-                    <div style={styles.containerStorage}>
-      <h3 style={styles.title}>Personal Storage</h3>
-      <div style={styles.barBackground}>
-        <div style={{ ...styles.barFill, width: `3%` }}></div>
-      </div>
-      <p style={styles.text}>38.45 MB of 0.5 GB used</p>
-    </div>
+                      <p className="mb-4">
+                        Video storage capacity depends on the subscription plan.
+                      </p>
+                      <div style={styles.containerStorage}>
+                        <h3 style={styles.title}>Personal Storage</h3>
+                        <div style={styles.barBackground}>
+                          <div
+                            style={{
+                              ...styles.barFill,
+                              width: `${
+                                (storage.memory?.remaining_storage /
+                                  storage.memory?.total_storage) *
+                                100
+                              }%`,
+                            }}
+                          ></div>
+                        </div>
+                        <p style={styles.text}>
+                          {storage.memory?.remaining_storage} GB of{" "}
+                          {storage.memory?.total_storage} GB used
+                        </p>
+                      </div>
                     </div>
                     <h6>Select</h6>
                     <div className="video-list">
-                      {videos.map((video, index) => (
+                      {videos?.map((video, index) => (
                         <VideoItem key={index} video={video} />
                       ))}
                     </div>
