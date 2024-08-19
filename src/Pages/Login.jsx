@@ -15,8 +15,7 @@ import { userActions } from "../store/user";
 import { FORGOT } from "../utility/api";
 import { VERIFY_OTP } from "../utility/api";
 import { loadingActions } from "../store/loading";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import toast, { Toaster } from "react-hot-toast";
 
 function Login() {
   const navigate = useNavigate();
@@ -126,7 +125,8 @@ function Login() {
     try {
       setErrors([]);
       let response = await axios.post(LOGIN, credentials);
-      dispatch(userActions.login(response.data));
+      
+      dispatch(userActions.login(response.data.user));
       localStorage.setItem(
         "stram_prisma_access_token",
         JSON.stringify(response.data.access_token)
@@ -148,12 +148,28 @@ function Login() {
     }
   };
   useEffect(() => {
-    forgot && toast("Password successfully changed.");
+    forgot && toast.success("Password successfully changed.");
   }, []);
   return (
     <>
-      <ToastContainer />
-
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
+        toastOptions={{
+          success: {
+            style: {
+              background: "green",
+              color: "white",
+            },
+          },
+          error: {
+            style: {
+              background: "red",
+              color: "white",
+            },
+          },
+        }}
+      />
       <section className="p-3 p-md-4 p-xl-5 form_design">
         <div className="container">
           <div className="card border-light-subtle shadow-sm">

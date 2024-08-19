@@ -14,8 +14,11 @@ const PaymentSuccess = () => {
 
     useEffect(() => {
      const updateOrder = async () => {
-           try {
-               let response = await axios.get(`${STRIPE_PAYMENT_SUCCESS}?session_id=${session_id}&package_id=${package_id}`);
+       try {
+         let token = localStorage.getItem("stram_prisma_access_token");
+             axios.defaults.headers.common["Authorization"]="Bearer "+JSON.parse(token);
+             let response = await axios.get(`${STRIPE_PAYMENT_SUCCESS}?session_id=${session_id}&package_id=${package_id}`);
+             
              navigate("/dashboard?payment=success");
            } catch (error) {
             navigate("/dashboard?payment=failed");

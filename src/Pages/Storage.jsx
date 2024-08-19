@@ -9,6 +9,7 @@ import { STORAGE, USER_VIDEOS } from "../utility/api";
 import VideoThumbnail from "react-video-thumbnail";
 import { useSelector ,useDispatch} from "react-redux";
 import { fetchVideosAction } from "../store/videos";
+import { loadingActions } from "../store/loading";
 
 const videos = [
   {
@@ -35,15 +36,18 @@ function Storage({
 }) {
   const [storage, setStorage] = useState({memory:null,videos:[]});
   const videos = useSelector(state => state.videos.videos);
+
   const dispatch = useDispatch();
   useEffect(()=>{
     const fetchStorage = async () => {
+      dispatch(loadingActions.setLoading(true));
       let storageUsage = await axios.get(STORAGE);
       dispatch(fetchVideosAction());
       storageUsage = storageUsage.data;
       setStorage((state) => {
         return {...state, memory:storageUsage};
       });
+      dispatch(loadingActions.setLoading(false));
     }
     fetchStorage();
   },[]);
@@ -75,7 +79,6 @@ function Storage({
 
   return (
     <>
-
       <main>
         <UserSidebar
           sidebarRef={sidebarRef}
@@ -121,7 +124,7 @@ function Storage({
                               ...styles.barFill,
                               width: `${
                                 (storage.memory?.remaining_storage /
-                                  storage.memory?.total_storage) *
+                                  storage.memory?.allocated_storage) *
                                 100
                               }%`,
                             }}
@@ -129,7 +132,7 @@ function Storage({
                         </div>
                         <p style={styles.text}>
                           {storage.memory?.remaining_storage} GB of{" "}
-                          {storage.memory?.total_storage} GB used
+                          {storage.memory?.allocated_storage} GB used
                         </p>
                       </div>
                     </div>

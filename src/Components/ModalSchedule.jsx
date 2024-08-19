@@ -17,11 +17,17 @@ import { FaCloudUploadAlt } from "react-icons/fa";
 import gDrive from "../assets/images/google-drive.png";
 import thumbnail from "../assets/images/blog4.png";
 import axios from "axios";
-import {VIDEO_UPLOAD} from "../utility/api";
+import { VIDEO_UPLOAD } from "../utility/api";
+import { loadingActions } from "../store/loading";
+import { useDispatch, useSelector } from "react-redux";
+import toast, { Toaster } from "react-hot-toast";
+import { videosActions } from "../store/videos";
 
 function ModalSchedule({ show, onClose }) {
   const [section, setSection] = useState(1);
-
+  const dispatch = useDispatch();
+  const videos = useSelector((state) => state.videos.videos);
+  const [upload, setUpload] = useState(false);
   const handleNext = (nextSection) => setSection(nextSection);
 
   // const handleFileChange = (event) => {
@@ -63,41 +69,74 @@ function ModalSchedule({ show, onClose }) {
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleFileChange = async (e) => {
+    setUpload(true);
     const file = e.target.files[0];
     if (file) {
-      const video = {
-        title: file.name,
-        type: file.type,
-        size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
-        duration: "N/A", // Set the duration if needed
-        thumbnail: URL.createObjectURL(file),
-      };
-      const formData = new FormData();
-      formData.append("video", file);
-      let response = await axios.post(VIDEO_UPLOAD, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      console.log(response);
-      setVideoData([video, ...videoData]);
-      
-      // Simulate upload progress
-      setUploadProgress(0);
-      const interval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            return 100;
-          }
-          return prev + 10;
+      try {
+        const video = {
+          title: file.name,
+          type: file.type,
+          size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
+          duration: "N/A", // Set the duration if needed
+          thumbnail: URL.createObjectURL(file),
+        };
+        const formData = new FormData();
+        formData.append("video", file);
+        let response = await axios.post(VIDEO_UPLOAD, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (progressEvent) => {
+            const { loaded, total } = progressEvent;
+            const percentage = Math.floor((loaded * 100) / total);
+            setUploadProgress(percentage);
+          },
         });
-      }, 200);
+        dispatch(videosActions.addVideo(response.data.video));
+        setVideoData([video, ...videoData]);
+        toast.success("Video uploaded successfully");
+        onClose();
+        // Simulate upload progress
+        setUploadProgress(0);
+        const interval = setInterval(() => {
+          setUploadProgress((prev) => {
+            if (prev >= 100) {
+              clearInterval(interval);
+              return 100;
+            }
+            return prev + 10;
+          });
+        }, 200);
+      } catch (error) {
+        toast.error("Failed to upload video");
+        onClose();
+      } finally {
+        setUpload(false);
+        setUploadProgress(0);
+      }
     }
   };
 
   return (
     <>
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
+        toastOptions={{
+          success: {
+            style: {
+              background: "green",
+              color: "white",
+            },
+          },
+          error: {
+            style: {
+              background: "red",
+              color: "white",
+            },
+          },
+        }}
+      />{" "}
       {/* modal */}
       <Modal
         show={show}
@@ -167,13 +206,31 @@ function ModalSchedule({ show, onClose }) {
                     Allowed: mov, mp4, m4v
                   </Modal.Title>
                 </div>
-                <button className="custom-button mt-3">
+                {upload && (
+                  <ProgressBar
+                    now={uploadProgress}
+                    label={`${uploadProgress}%`}
+                    className="mb-2"
+                    style={{
+                      height: "10px",
+                      backgroundColor: "var(--secondary-color)",
+                      borderRadius: "10px",
+                      overflow: "hidden",
+                      // backgroundColor: "var(--primary-color)",
+                      transition: "width 0.4s ease",
+                      fontWeight: "bold",
+                    }}
+                  />
+                )}
+
+                <button className="custom-button mt-3" disabled={upload}>
                   <label className="file-label">
                     <input
                       type="file"
                       className="file-input"
                       accept=".mov, .mp4, .m4v"
                       onChange={handleFileChange}
+                      disabled={upload}
                     />
                     <div className="custom-button-icon">
                       <GoDeviceDesktop style={{ fontSize: "26px" }} />
@@ -321,7 +378,6 @@ function ModalSchedule({ show, onClose }) {
                     </OverlayTrigger>
                   </div>
                 </div>
-
                 {/* Display Uploaded Video */}
                 {videoData.length > 0 && (
                   <div className="video-upload-preview mb-3">

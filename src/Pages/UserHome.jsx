@@ -11,9 +11,12 @@ import Footer from "../Components/Footer";
 import { DASHBOARD } from "./../utility/api.js";
 import axios from "axios";
 import { loadingActions } from "../store/loading";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { useSearchParams } from "react-router-dom";
+
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { isAuth } from "../utility/auth";
+import { useDispatch } from "react-redux";
+import toast, { Toaster } from "react-hot-toast";
+
 
 
 function UserHome({
@@ -33,8 +36,20 @@ function UserHome({
     video_url:
       "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
   });
+
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
   let payment = searchParams.get("payment");
+
+  useEffect(() => {
+   
+    dispatch(loadingActions.setLoading(true));
+   
+    if(!isAuth()){
+      navigate("/login");
+    }
+  }, []);
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -54,15 +69,33 @@ function UserHome({
        theme: "colored",
      });
       payment === "failed" &&
-        toast.success("Plan successfully subscribed.", {
+        toast.error("Plan failed to subscribed.", {
           theme: "colored",
         });
-   },[]);
+   }, []);
+  useEffect(() => { 
+    dispatch(loadingActions.setLoading(false));
+  }, []);
+  
   return (
     <>
-      <ToastContainer
-       
-        theme="colored"
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
+        toastOptions={{
+          success: {
+            style: {
+              background: "green",
+              color: "white",
+            },
+          },
+          error: {
+            style: {
+              background: "red",
+              color: "white",
+            },
+          },
+        }}
       />
       <main>
         <UserSidebar

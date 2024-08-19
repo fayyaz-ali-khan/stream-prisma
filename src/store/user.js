@@ -1,4 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { PROFILE_DATA } from "../utility/api";
+import axios from "axios";
 
 const userSlice = createSlice({
   name: "user",
@@ -13,18 +15,16 @@ const userSlice = createSlice({
   },
 });
 
-const fetchUserAction = () => {
+export const fetchUserAction = () => {
   return async (dispatch) => {
     try {
-      const request = await axios.get("api/profile");
-      let response = await request.data;
-      if (response.Status) {
-        let user = response.userDetail;
-        dispatch(userActions.login(user));
-      }
-    } catch (error) {}
+      const request = await axios.get(PROFILE_DATA);
+      let response = request.data.user;
+      dispatch(userActions.login(response));
+    } catch (error) {
+      console.log("Failed to load user profile:", error);
+    }
   };
 };
-
 export const userActions = userSlice.actions;
 export default userSlice.reducer;

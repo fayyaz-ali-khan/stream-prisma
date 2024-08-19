@@ -16,7 +16,14 @@ const videosSlice = createSlice({
         },
         setSelectedVideo: (state, action) => {
             state.selectedVideo = action.payload;
-        },
+      },
+        addVideo: (state, action) => {
+            state.videos = state.videos.concat(action.payload);
+      }
+      ,
+        deleteVideo: (state, action) => {
+            state.videos = state.videos.filter((video) => video.id !== action.payload);
+      }
     },
 });
 
