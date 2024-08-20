@@ -17,6 +17,7 @@ import { useDispatch } from "react-redux";
 import { loadingActions } from "../store/loading";
 import toast, { Toaster } from "react-hot-toast";
 import { videosActions } from "../store/videos";
+import { storageAction } from "../store/storage";
 
 
 function VideoItem({ video }) {
@@ -32,10 +33,9 @@ function VideoItem({ video }) {
       dispatch(loadingActions.setLoading(true));
       let response = await axios.delete(DELETE_VIDEO + video.id);
       dispatch(videosActions.deleteVideo(video.id));
+      dispatch(storageAction());
       toast.success("Video deleted successfully");
-      console.log(response);
     } catch (error) {
-      console.log(error)
       toast.error("Something went wrong");
     } finally {
       dispatch(loadingActions.setLoading(false));

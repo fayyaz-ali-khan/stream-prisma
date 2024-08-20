@@ -22,6 +22,7 @@ import { loadingActions } from "../store/loading";
 import { useDispatch, useSelector } from "react-redux";
 import toast, { Toaster } from "react-hot-toast";
 import { videosActions } from "../store/videos";
+import { storageAction } from "../store/storage";
 
 function ModalSchedule({ show, onClose }) {
   const [section, setSection] = useState(1);
@@ -95,6 +96,7 @@ function ModalSchedule({ show, onClose }) {
         dispatch(videosActions.addVideo(response.data.video));
         setVideoData([video, ...videoData]);
         toast.success("Video uploaded successfully");
+        dispatch(storageAction());
         onClose();
         // Simulate upload progress
         setUploadProgress(0);

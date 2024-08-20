@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import UserSidebar from "../Components/UserSidebar";
 import UserNavbar from "../Components/UserNavbar";
 import VideoItem from "../Components/VideoItem";
@@ -7,9 +7,12 @@ import card3 from "../assets/images/card3.jpg";
 import axios from "axios";
 import { STORAGE, USER_VIDEOS } from "../utility/api";
 import VideoThumbnail from "react-video-thumbnail";
-import { useSelector ,useDispatch} from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { fetchVideosAction } from "../store/videos";
 import { loadingActions } from "../store/loading";
+import toast, { Toaster } from "react-hot-toast";
+import { storageAction,storageActions } from "../store/storage";
+
 
 const videos = [
   {
@@ -34,51 +37,48 @@ function Storage({
   SmallhandleToggle,
   SmallhandleToggleRemove,
 }) {
-  const [storage, setStorage] = useState({memory:null,videos:[]});
-  const videos = useSelector(state => state.videos.videos);
+  const storage = useSelector((state) => state.storage);
+  const storage_error = useSelector((state) => state.storage.error);
+  const videos = useSelector((state) => state.videos.videos);
 
   const dispatch = useDispatch();
-  useEffect(()=>{
+  useEffect(() => {
     const fetchStorage = async () => {
-      dispatch(loadingActions.setLoading(true));
-      let storageUsage = await axios.get(STORAGE);
-      dispatch(fetchVideosAction());
-      storageUsage = storageUsage.data;
-      setStorage((state) => {
-        return {...state, memory:storageUsage};
-      });
-      dispatch(loadingActions.setLoading(false));
-    }
+        dispatch(loadingActions.setLoading(true));
+        dispatch(fetchVideosAction());
+        dispatch(storageAction());
+        dispatch(loadingActions.setLoading(false));
+      
+    };
     fetchStorage();
-  },[]);
-  //   const [successMessage, setSuccessMessage] = useState('Your success message here');
-  // const [errorMessage, setErrorMessage] = useState('Your error message here');
-  // const [errors, setErrors] = useState(['Error 1', 'Error 2']);
-  // const [videos, setVideos] = useState([
-  //   // Mock video data
-  //   {
-  //     id: 1,
-  //     video: "sample.mp4",
-  //     title: "Sample Video",
-  //     type: "mp4",
-  //     size: 5000,
-  //     date: "2023-01-01",
-  //   },
-  // ]);
+  }, []);
 
-  // const handleUpdateVideo = (e, videoId) => {
-  //   e.preventDefault();
-  //   // Implement your update logic here
-  //   console.log("Updating video", videoId);
-  // };
+  if (storage_error) {
+    toast.error(storage_error);
+    storage_error && dispatch(storageActions.setError(""));
 
-  // const handleDeleteVideo = (videoId) => {
-  //   // Implement your delete logic here
-  //   console.log("Deleting video", videoId);
-  // };
+  }
 
   return (
     <>
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
+        toastOptions={{
+          success: {
+            style: {
+              background: "green",
+              color: "white",
+            },
+          },
+          error: {
+            style: {
+              background: "red",
+              color: "white",
+            },
+          },
+        }}
+      />
       <main>
         <UserSidebar
           sidebarRef={sidebarRef}
@@ -153,37 +153,36 @@ function Storage({
   );
 }
 
-
 const styles = {
   containerStorage: {
-    width: '100%',
-    maxWidth: '250px',
-    padding: '5px',
-    borderRadius: '8px',
-    backgroundColor: '#f4f4f4',
-    boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.1)',
+    width: "100%",
+    maxWidth: "250px",
+    padding: "5px",
+    borderRadius: "8px",
+    backgroundColor: "#f4f4f4",
+    boxShadow: "0px 0px 10px rgba(0, 0, 0, 0.1)",
   },
   title: {
-    margin: '0 0 10px 0',
-    fontSize: '13px',
-    fontWeight: '600',
+    margin: "0 0 10px 0",
+    fontSize: "13px",
+    fontWeight: "600",
   },
   barBackground: {
-    width: '100%',
-    height: '8px',
-    backgroundColor: '#e0e0e0',
-    borderRadius: '10px',
-    overflow: 'hidden',
+    width: "100%",
+    height: "8px",
+    backgroundColor: "#e0e0e0",
+    borderRadius: "10px",
+    overflow: "hidden",
   },
   barFill: {
-    height: '100%',
-    backgroundColor: 'var(--secondary-color)',
-    borderRadius: '10px 0 0 10px',
+    height: "100%",
+    backgroundColor: "var(--secondary-color)",
+    borderRadius: "10px 0 0 10px",
   },
   text: {
-    margin: '10px 0 0 0',
-    fontSize: '12px',
-    color: '#555',
+    margin: "10px 0 0 0",
+    fontSize: "12px",
+    color: "#555",
   },
 };
 

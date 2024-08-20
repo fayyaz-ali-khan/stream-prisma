@@ -78,7 +78,7 @@ function PlanPage({
             let response = await axios.get(
               `${RAZORPAY_PAYMENT_SUCCESS}?razorpay_payment_id=${res.razorpay_payment_id}&razorpay_signature=${res.razorpay_signature}&package_id=${params.id}`
             );
-            if (response.data.success) { 
+            if (response.data.success) {
               toast.success(response.data.message);
             } else {
               toast.error(response.data.message);
@@ -106,9 +106,8 @@ function PlanPage({
     };
 
     const rzpay = new Razorpay(options);
-    
-      rzpay.open();
-    
+
+    rzpay.open();
 
     setLoading(false);
   }, [Razorpay, plan]);
@@ -141,10 +140,11 @@ function PlanPage({
         const response = await axios.get(`${PLAN_DETAILS}${params.id}`);
         if (response.data.status === "success") {
           setPlan(response.data.data);
-          setLoading(false);
         }
       } catch (error) {
         console.log(error);
+      } finally {
+        setLoading(false);
       }
     };
 

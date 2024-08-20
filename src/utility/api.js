@@ -1,6 +1,7 @@
 export const DOMAIN = "https://streamprisma.com/";
 
 export const LOGIN = "api/login";
+export const SOCIAL_LOGIN = "api/social-login/google";
 export const LOGOUT = "api/logout";
 export const REGISTER = "api/register";
 export const FORGOT = "api/send-otp";
@@ -19,4 +20,5 @@ export const RAZORPAY_PAYMENT_SUCCESS="api/payment/razorpay/success";
 export const USER_VIDEOS = "api/user/allVideos";
 export const DELETE_VIDEO = "api/videos/";
 export const SEND_MESSAGE = "api/send-message ";
+
 
