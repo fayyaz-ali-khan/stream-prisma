@@ -18,4 +18,5 @@ export const RAZORPAY_PAYMENT = "api/payment/razorpay";
 export const RAZORPAY_PAYMENT_SUCCESS="api/payment/razorpay/success";
 export const USER_VIDEOS = "api/user/allVideos";
 export const DELETE_VIDEO = "api/videos/";
+export const SEND_MESSAGE = "api/send-message ";
 
