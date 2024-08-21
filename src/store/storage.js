@@ -19,16 +19,20 @@ const storageSlice = createSlice({
 
 export const storageAction = () => {
   return async (dispatch) => {
-      try {
-          let response = await axios.get(STORAGE);
-          dispatch(storageActions.setStorage(response.data));
-      } catch (error) {
-          if (error.response && error.response.status === 404) {            
-              dispatch(storageActions.setError(error.response.data.error));
-          } else {
-              dispatch(storageActions.setError("Something went wrong"));
-          }
-      } 
+    try {
+      let response = await axios.get(STORAGE);
+      dispatch(storageActions.setStorage(response.data));
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        dispatch(
+          storageActions.setError(
+            error.response.data.error || "Something went wrong"
+          )
+        );
+      } else {
+        dispatch(storageActions.setError("Something went wrong"));
+      }
+    }
   };
 };
 

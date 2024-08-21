@@ -15,7 +15,6 @@ import CircularProgress from "@mui/material/CircularProgress";
 import useRazorpay from "react-razorpay";
 
 import { loadStripe } from "@stripe/stripe-js";
-import { Elements, PaymentElement } from "@stripe/react-stripe-js";
 import { useSelector } from "react-redux";
 import toast, { Toaster } from "react-hot-toast";
 
