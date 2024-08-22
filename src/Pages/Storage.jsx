@@ -11,8 +11,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { fetchVideosAction } from "../store/videos";
 import { loadingActions } from "../store/loading";
 import toast, { Toaster } from "react-hot-toast";
-import { storageAction,storageActions } from "../store/storage";
-
+import { storageAction, storageActions } from "../store/storage";
 
 const videos = [
   {
@@ -44,11 +43,10 @@ function Storage({
   const dispatch = useDispatch();
   useEffect(() => {
     const fetchStorage = async () => {
-        dispatch(loadingActions.setLoading(true));
-        dispatch(fetchVideosAction());
-        dispatch(storageAction());
-        dispatch(loadingActions.setLoading(false));
-      
+      dispatch(loadingActions.setLoading(true));
+      dispatch(fetchVideosAction());
+      dispatch(storageAction());
+      dispatch(loadingActions.setLoading(false));
     };
     fetchStorage();
   }, []);
@@ -56,7 +54,6 @@ function Storage({
   if (storage_error) {
     toast.error(storage_error);
     storage_error && dispatch(storageActions.setError(""));
-
   }
 
   return (
@@ -125,14 +122,18 @@ function Storage({
                               width: `${
                                 (storage.memory?.remaining_storage /
                                   storage.memory?.allocated_storage) *
+                                1024 *
                                 100
                               }%`,
                             }}
                           ></div>
                         </div>
                         <p style={styles.text}>
-                          {storage.memory?.remaining_storage} GB of{" "}
-                          {storage.memory?.allocated_storage} GB used
+                          {storage.memory?.unit === "GB"
+                            ? storage.memory?.remaining_storage / (1024 * 1024)
+                            : storage.memory?.remaining_storage / 1024}{" "}
+                          {storage.memory?.unit} of{" "}
+                          {storage.memory?.allocated_storage} used
                         </p>
                       </div>
                     </div>

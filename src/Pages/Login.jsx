@@ -17,7 +17,8 @@ import { FORGOT } from "../utility/api";
 import { VERIFY_OTP } from "../utility/api";
 import { loadingActions } from "../store/loading";
 import toast, { Toaster } from "react-hot-toast";
-import { LoginSocialGoogle } from "reactjs-social-login";
+import { LoginSocialGoogle, LoginSocialFacebook } from "reactjs-social-login";
+import FacebookLogin from "react-facebook-login/dist/facebook-login-render-props";
 
 function Login() {
   const navigate = useNavigate();
@@ -151,7 +152,7 @@ function Login() {
   };
 
   // GOOGLE LOGIN
-  const handleGoogleLogin = async ({ provider, data }) => {
+  const handleGoogleLogin = async (data) => {
     dispatch(loadingActions.setLoading(true));
     let credentials = {
       email: data.email,
@@ -162,6 +163,7 @@ function Login() {
     };
     try {
       let response = await axios.post(SOCIAL_LOGIN, credentials);
+
       localStorage.setItem(
         "stram_prisma_access_token",
         JSON.stringify(response.data.access_token)
@@ -169,7 +171,43 @@ function Login() {
       axios.defaults.headers.common["Authorization"] =
         "Bearer " + response.data.access_token;
       toast.success(response.data.message);
-      setTimeout(() => { 
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000);
+    } catch (error) {
+      if (error.response) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("Something went wrong");
+      }
+    } finally {
+      dispatch(loadingActions.setLoading(false));
+    }
+  };
+  const handleFacebookLogin = async ({ data }) => {
+    // console.data(data);
+    // return;
+    dispatch(loadingActions.setLoading(true));
+    let credentials = {
+      email: data.email,
+      first_name: data.first_name,
+      last_name: data.last_name,
+      name: data.name,
+      social_id: data.userID,
+    };
+
+    console.log("facebook", credentials);
+    try {
+      let response = await axios.post(SOCIAL_LOGIN, credentials);
+
+      localStorage.setItem(
+        "stram_prisma_access_token",
+        JSON.stringify(response.data.access_token)
+      );
+      axios.defaults.headers.common["Authorization"] =
+        "Bearer " + response.data.access_token;
+      toast.success(response.data.message);
+      setTimeout(() => {
         navigate("/dashboard");
       }, 1000);
     } catch (error) {
@@ -356,12 +394,12 @@ function Login() {
                         <LoginSocialGoogle
                           client_id={import.meta.env.VITE_GOOGLE_CLIENT_ID}
                           onLoginStart={() => {
-                            dispatch(loadingActions.setLoading(true));
+                            // dispatch(loadingActions.setLoading(true));
                           }}
                           redirect_uri={
                             import.meta.env.VITE_GOOGLE_REDIRECT_URI
                           }
-                          scope="https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email openid"
+                          scope="https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email openid https://www.googleapis.com/auth/youtube.readonly"
                           discoveryDocs="claims_supported"
                           onResolve={handleGoogleLogin}
                           onReject={(err) => {
@@ -383,19 +421,47 @@ function Login() {
                             <span className="ms-2 fs-6">Google</span>
                           </Link>
                         </LoginSocialGoogle>
-                        <Link to={"/"} className="btn bsb-btn-xl btn-new2">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            fill="currentColor"
-                            className="bi bi-facebook"
-                            viewBox="0 0 16 16"
-                          >
-                            <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951z" />
-                          </svg>
-                          <span className="ms-2 fs-6">Facebook</span>
-                        </Link>
+                        <LoginSocialFacebook
+                          appId="789814993081502"
+                          fieldsProfile={
+                            "id,first_name,last_name,middle_name,name,name_format,picture,short_name,email,gender"
+                          }
+                          onLoginStart={() => {}}
+                          onLogoutSuccess={() => {}}
+                          redirect_uri={
+                            import.meta.env.VITE_GOOGLE_REDIRECT_URI
+                          }
+                          onResolve={handleFacebookLogin}
+                          onReject={(err) => {
+                            console.log(err);
+                          }}
+                        >
+                          <Link to={"/"} className="btn bsb-btn-xl btn-new2">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              fill="currentColor"
+                              className="bi bi-facebook"
+                              viewBox="0 0 16 16"
+                            >
+                              <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951z" />
+                            </svg>
+                            <span className="ms-2 fs-6">Facebook</span>
+                          </Link>
+                        </LoginSocialFacebook>
+                        {/* <FacebookLogin
+                          appId="789814993081502"
+                          autoLoad
+                          callback={(res) => {
+                            console.log(res);
+                          }}
+                          render={(renderProps) => (
+                            <button onClick={renderProps.onClick}>
+                              This is my custom FB button
+                            </button>
+                          )}
+                        /> */}
                       </div>
                     </div>
                   </div>
