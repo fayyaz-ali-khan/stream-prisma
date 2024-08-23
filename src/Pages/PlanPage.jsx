@@ -1,118 +1,177 @@
 import React, { useEffect, useState, useCallback } from "react";
-import UserSidebar from '../Components/UserSidebar'
-import UserNavbar from '../Components/UserNavbar'
-import { TiTick } from 'react-icons/ti';
-import { useParams } from 'react-router-dom'
-import axios from 'axios'
-import { PLAN_DETAILS, STRIPE_PAYMENT } from '../utility/api';
+import UserSidebar from "../Components/UserSidebar";
+import UserNavbar from "../Components/UserNavbar";
+import { TiTick } from "react-icons/ti";
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import {
+  PLAN_DETAILS,
+  STRIPE_PAYMENT,
+  RAZORPAY_PAYMENT,
+  RAZORPAY_PAYMENT_SUCCESS,
+} from "../utility/api";
 import Backdrop from "@mui/material/Backdrop";
 import CircularProgress from "@mui/material/CircularProgress";
 import useRazorpay from "react-razorpay";
 
-import { loadStripe} from "@stripe/stripe-js";
-import { Elements, PaymentElement } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+import { useSelector } from "react-redux";
+import toast, { Toaster } from "react-hot-toast";
 
-
-
-function PlanPage({ mainContentRef, sidebarRef, handleToggle, removeSmRef, SmallhandleToggle, SmallhandleToggleRemove }) {
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [activeTab, setActiveTab] = useState('stripe');
+function PlanPage({
+  mainContentRef,
+  sidebarRef,
+  handleToggle,
+  removeSmRef,
+  SmallhandleToggle,
+  SmallhandleToggleRemove,
+}) {
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [activeTab, setActiveTab] = useState("stripe");
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState({});
   const [Razorpay] = useRazorpay();
+  const user = useSelector((state) => state.user.user);
 
-
-  const params= useParams();
+  console.log(user);
+  const params = useParams();
   // Mock data
   const planP = {
-    name: 'Basic Plan',
+    name: "Basic Plan",
     price: 20,
     discountprice: 15,
     total_storage: 50,
   };
 
   const userData = {
-    first_name: 'John',
-    email: 'john.doe@example.com',
+    first_name: "John",
+    email: "john.doe@example.com",
   };
 
-
-    const handleRazporayPayment = useCallback(async () => {
+  const handleRazporayPayment = useCallback(async () => {
+    setLoading(true);
     // const order = await createOrder(params);
-
+    let data = {
+      product: plan.name,
+      price: plan.price,
+      packageId: params.id,
+    };
+    let order = await axios.post(RAZORPAY_PAYMENT, data);
+    console.log(order.data);
     const options = {
-      key: "rzp_live_lpIwS1Pl9m8Ta9",
-      amount: "3000",
+      key: order.data.razor_client_id,
+      amount: order.data.amount,
       currency: "INR",
-      name: "Acme Corp",
+      name: order.data.data.name,
       description: "Test Transaction",
       image: "https://example.com/your_logo",
-      order_id: "4534trksdf843",
-      handler: (res) => {
-        console.log(res);
+      order_id: order.data.data.id,
+      handler: async (res) => {
+        if (
+          res.status_code == 200 &&
+          res.razorpay_payment_id &&
+          res.razorpay_signature
+        ) {
+          try {
+            let response = await axios.get(
+              `${RAZORPAY_PAYMENT_SUCCESS}?razorpay_payment_id=${res.razorpay_payment_id}&razorpay_signature=${res.razorpay_signature}&package_id=${params.id}`
+            );
+            if (response.data.success) {
+              toast.success(response.data.message);
+            } else {
+              toast.error(response.data.message);
+            }
+            console.log(response.data.success);
+          } catch (error) {
+            console.log(error);
+            toast.error("Payment Failed");
+          } finally {
+            setLoading(false);
+          }
+        } else {
+          toast.error("Payment Failed");
+        }
       },
       prefill: {
-        name: "Piyush Garg",
-        email: "youremail@example.com",
-        contact: "9999999999",
+        name: order.data.data.name,
+        email: order.data.data.email,
+        contact: order.data.data.contact,
       },
-      notes: {
-        address: "Razorpay Corporate Office",
-      },
+
       theme: {
-        color: "#3399cc",
+        color: "#AA0062",
       },
     };
 
     const rzpay = new Razorpay(options);
+
     rzpay.open();
-    }, [Razorpay]);
-  
+
+    setLoading(false);
+  }, [Razorpay, plan]);
+
   const handleStripePayment = async () => {
+    setLoading(true);
     let data = {
-      product:plan.name, price:plan.discountprice, package_id:params.id
-    }
+      product: plan.name,
+      price: plan.discountprice,
+      package_id: params.id,
+    };
     try {
       let response = await axios.post(STRIPE_PAYMENT, data);
-         const stripe = await loadStripe(
-           "pk_test_51P9nOyBFIC31oQQ9z2NYl6wOYe2zKX9ScrgJTYBzD4Uyu7scr1NyULhFSv7RFZqLMKxD2HGqBUK91CPXiDCqnXrN000Em3qcXx"
-      );
-      console.log(response.data);
-         stripe.redirectToCheckout({
-           sessionId: response.data});
+      const stripe = await loadStripe(response.data.stripe_client_id);
+      stripe.redirectToCheckout({
+        sessionId: response.data.session_url,
+      });
     } catch (error) {
       console.log(error);
+    } finally {
+      setLoading(false);
     }
-    
-
-
- }
-    const handleTabClick = (tabName) => {
-      setActiveTab(tabName);
-     
-    };
+  };
+  const handleTabClick = (tabName) => {
+    setActiveTab(tabName);
+  };
   useEffect(() => {
     const fetchPlanDetails = async () => {
       try {
         const response = await axios.get(`${PLAN_DETAILS}${params.id}`);
-        console.log(response.data);
-        if (response.data.status === 'success') {
+        if (response.data.status === "success") {
           setPlan(response.data.data);
-          setLoading(false);
         }
       } catch (error) {
         console.log(error);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
 
     fetchPlanDetails();
-  }, [params.id])
+  }, [params.id]);
 
-  
   return (
     <>
-    
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
+        toastOptions={{
+          duration: 3000,
+
+          success: {
+            style: {
+              background: "green",
+              color: "white",
+            },
+          },
+          error: {
+            style: {
+              background: "red",
+              color: "white",
+            },
+          },
+        }}
+      />
       <Backdrop
         sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={loading}
@@ -218,11 +277,13 @@ function PlanPage({ mainContentRef, sidebarRef, handleToggle, removeSmRef, Small
                         <strong className="card-title">Order details</strong>
                         <div className="mt-2 d-flex justify-content-between">
                           <h6 className="m-0">First Name:</h6>
-                          <p className="m-0">{userData.first_name}</p>
+                          <p className="m-0">
+                            {user.first_name + " " + user.last_name}
+                          </p>
                         </div>
                         <div className="d-flex justify-content-between">
                           <h6 className="m-0">Email:</h6>
-                          <p className="m-0">{userData.email}</p>
+                          <p className="m-0">{user.email}</p>
                         </div>
                         <hr />
                         <h6>Product information</h6>
@@ -363,13 +424,13 @@ function PlanPage({ mainContentRef, sidebarRef, handleToggle, removeSmRef, Small
                               id="ex2-tabs-2"
                               role="tabpanel"
                             >
-                              <a
+                              <button
                                 onClick={handleRazporayPayment}
                                 id="razorpay-button" // Add Razorpay integration here
                                 className="btn btn-new2 my-4 w-100"
                               >
                                 Pay with Razorpay
-                              </a>
+                              </button>
                               <div className="d-flex align-items-center justify-content-between mt-2">
                                 <ul className="bg-dark p-2 d-flex">
                                   <li className="list-group-item p-1">
@@ -486,4 +547,4 @@ export const loader = ({ params }) => {
   return null;
 };
 
-export default PlanPage
+export default PlanPage;

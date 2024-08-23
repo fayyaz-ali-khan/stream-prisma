@@ -17,9 +17,9 @@ if (token) {
   axios.defaults.headers.common["Authorization"] = "Bearer " + token;
 }
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+  // <React.StrictMode>
     <Provider store={store}>
       <App />
     </Provider>
-  </React.StrictMode>
+  // </React.StrictMode>
 );

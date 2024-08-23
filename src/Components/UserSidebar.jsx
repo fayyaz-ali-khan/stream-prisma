@@ -280,19 +280,19 @@ function UserSidebar({
           <hr />
           
           <h6 style={{padding:'0px 0px 0px 22px', fontSize:'12px', color:"lightgray", textTransform:'uppercase'}}>Subscription Plans</h6>
-          <li>
+          {/* <li>
             <NavLink
               to="/newplan"
               className="nav-link"
               activeClassName="active"
-            >
+            > */}
               {/* <svg className="bi" width="20" height="20">
                 <use xlinkHref="#new-plan-icon" />
               </svg> */}
-              <MdOutlinePayments style={{width:'25px', height:'21px', marginLeft: '10px'}}/>
+              {/* <MdOutlinePayments style={{width:'25px', height:'21px', marginLeft: '10px'}}/>
               <span>Buy a new plan</span>
             </NavLink>
-          </li>
+          </li> */}
           <li>
             <NavLink
               to="/subscription"

@@ -17,12 +17,26 @@ import { FaCloudUploadAlt } from "react-icons/fa";
 import gDrive from "../assets/images/google-drive.png";
 import thumbnail from "../assets/images/blog4.png";
 import axios from "axios";
-import {VIDEO_UPLOAD} from "../utility/api";
+import { VIDEO_UPLOAD } from "../utility/api";
+import { loadingActions } from "../store/loading";
+import { useDispatch, useSelector } from "react-redux";
+import toast, { Toaster } from "react-hot-toast";
+import { videosActions, fetchVideosAction } from "../store/videos";
+import { storageAction } from "../store/storage";
+import { useNavigate, useLocation } from "react-router-dom";
+import VideoThumbnail from "react-video-thumbnail";
 
 function ModalSchedule({ show, onClose }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const currentPath = location.pathname;
   const [section, setSection] = useState(1);
-
+  const [searchText, setSearchText] = useState("");
+  const dispatch = useDispatch();
+  const videos = useSelector((state) => state.videos.videos);
+  const [upload, setUpload] = useState(false);
   const handleNext = (nextSection) => setSection(nextSection);
+  const [searchVideos, setsearchVideos] = useState("");
 
   // const handleFileChange = (event) => {
   //   const file = event.target.files[0];
@@ -61,43 +75,104 @@ function ModalSchedule({ show, onClose }) {
     },
   ]);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [currentFile, setCurrentFile] = useState({
+    file: false,
+    title: "",
+    type: "",
+    size: "",
+    duration: "N/A", // Set the duration if needed
+    thumbnail: "",
+  });
 
+  // This function is called when a file is selected by the user using the file input
   const handleFileChange = async (e) => {
+    setUpload(true);
     const file = e.target.files[0];
     if (file) {
-      const video = {
-        title: file.name,
-        type: file.type,
-        size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
-        duration: "N/A", // Set the duration if needed
-        thumbnail: URL.createObjectURL(file),
-      };
-      const formData = new FormData();
-      formData.append("video", file);
-      let response = await axios.post(VIDEO_UPLOAD, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      console.log(response);
-      setVideoData([video, ...videoData]);
-      
-      // Simulate upload progress
-      setUploadProgress(0);
-      const interval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            return 100;
-          }
-          return prev + 10;
+      try {
+        const video = {
+          file: true,
+          title: file.name,
+          type: file.type,
+          size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
+          duration: "N/A", // Set the duration if needed
+          thumbnail: URL.createObjectURL(file),
+        };
+        setCurrentFile(video);
+        const formData = new FormData();
+        formData.append("video", file);
+        let response = await axios.post(VIDEO_UPLOAD, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (progressEvent) => {
+            const { loaded, total } = progressEvent;
+            const percentage = Math.floor((loaded * 100) / total);
+            setUploadProgress(percentage);
+          },
         });
-      }, 200);
+        dispatch(videosActions.addVideo(response.data.video));
+        setVideoData([video, ...videoData]);
+        toast.success("Video uploaded successfully");
+        dispatch(storageAction());
+        onClose();
+        // Simulate upload progress
+        setUploadProgress(0);
+        const interval = setInterval(() => {
+          setUploadProgress((prev) => {
+            if (prev >= 100) {
+              clearInterval(interval);
+              return 100;
+            }
+            return prev + 10;
+          });
+        }, 200);
+      } catch (error) {
+        toast.error("Failed to upload video");
+        onClose();
+      } finally {
+        setUpload(false);
+        setUploadProgress(0);
+      }
     }
   };
 
+  // This effect will be triggered when the component mounts and get videos from the server
+  useEffect(() => {
+    dispatch(fetchVideosAction());
+  }, []);
+
+  // This effect will be triggered when the search text changes
+  useEffect(() => {
+    const handleSearch = async () => {
+      setsearchVideos(searchText.trim());
+    };
+    const timer = setTimeout(() => {
+      handleSearch();
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [searchText]);
+
   return (
     <>
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
+        toastOptions={{
+          success: {
+            style: {
+              background: "green",
+              color: "white",
+            },
+          },
+          error: {
+            style: {
+              background: "red",
+              color: "white",
+            },
+          },
+        }}
+      />{" "}
       {/* modal */}
       <Modal
         show={show}
@@ -167,13 +242,31 @@ function ModalSchedule({ show, onClose }) {
                     Allowed: mov, mp4, m4v
                   </Modal.Title>
                 </div>
-                <button className="custom-button mt-3">
+                {upload && (
+                  <ProgressBar
+                    now={uploadProgress}
+                    label={`${uploadProgress}%`}
+                    className="mb-2"
+                    style={{
+                      height: "10px",
+                      backgroundColor: "var(--secondary-color)",
+                      borderRadius: "10px",
+                      overflow: "hidden",
+                      // backgroundColor: "var(--primary-color)",
+                      transition: "width 0.4s ease",
+                      fontWeight: "bold",
+                    }}
+                  />
+                )}
+
+                <button className="custom-button mt-3" disabled={upload}>
                   <label className="file-label">
                     <input
                       type="file"
                       className="file-input"
                       accept=".mov, .mp4, .m4v"
                       onChange={handleFileChange}
+                      disabled={upload}
                     />
                     <div className="custom-button-icon">
                       <GoDeviceDesktop style={{ fontSize: "26px" }} />
@@ -321,11 +414,10 @@ function ModalSchedule({ show, onClose }) {
                     </OverlayTrigger>
                   </div>
                 </div>
-
                 {/* Display Uploaded Video */}
-                {videoData.length > 0 && (
+                {currentFile.file && (
                   <div className="video-upload-preview mb-3">
-                    {uploadProgress < 100 && (
+                    {uploadProgress > 0 && (
                       <ProgressBar
                         now={uploadProgress}
                         label={`${uploadProgress}%`}
@@ -343,74 +435,91 @@ function ModalSchedule({ show, onClose }) {
                     )}
                     <div className="video-item d-flex mb-3">
                       <img
-                        src={videoData[0].thumbnail}
+                        src={currentFile.thumbnail}
                         alt="thumbnail"
                         style={{ borderRadius: "6px" }}
                         className="thumbnail mr-3"
                       />
                       <div className="video-info">
                         <div className="video-title mb-2">
-                          {videoData[0].title}
+                          {currentFile.title}
                         </div>
                         <div className="video-details d-flex justify-content-between">
-                          <div>Type: {videoData[0].type}</div>
-                          <div>Size: {videoData[0].size}</div>
-                          <div>Duration: {videoData[0].duration}</div>
+                          <div>Type: {currentFile.type}</div>
+                          <div>Size: {currentFile.size}</div>
+                          <div>Duration: {currentFile.duration}</div>
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
+                {currentPath !== "/storage" && (
+                  <div className="storage-tabs d-flex justify-content-center my-3">
+                    <Button
+                      style={{
+                        border: "1px dotted #AA0062",
+                        background: "transparent",
+                        color: "#AA0062",
+                        borderRadius: "50px",
+                        fontSize: "14px",
+                      }}
+                      className="mr-2"
+                      onClick={() => navigate("/storage")}
+                    >
+                      StreamPrisma Storage
+                    </Button>
+                  </div>
+                )}
+                {videos.length > 0 && (
+                  <Form.Control
+                    type="text"
+                    placeholder="Search Videos"
+                    className="my-3 input_modal"
+                    onChange={(e) => setSearchText(e.target.value)}
+                  />
+                )}
 
-                <div className="storage-tabs d-flex justify-content-center my-3">
-                  <Button
-                    style={{
-                      border: "1px dotted #AA0062",
-                      background: "transparent",
-                      color: "#AA0062",
-                      borderRadius: "50px",
-                      fontSize: "14px",
-                    }}
-                    className="mr-2"
-                  >
-                    StreamPrisma Storage
-                  </Button>
-                </div>
-                <Form.Control
-                  type="text"
-                  placeholder="Search Videos"
-                  className="my-3 input_modal"
-                />
                 <div className="video-list">
-                  {videoData.map((video, index) => (
-                    <>
-                      <div
-                        className="video-item video-items d-flex mb-3"
-                        key={index}
-                      >
-                        <Link
-                          to={"/schdulestreams"}
-                          className="btn btn-new2 select_btn_set"
+                  {videos
+                    .filter((video) =>
+                      searchVideos.trim() === ""
+                        ? video
+                        : video.title
+                            ?.toLowerCase()
+                            .includes(searchText.toLowerCase())
+                    )
+                    .map((video, index) => (
+                      <>
+                        <div
+                          className="video-item video-items d-flex mb-3"
+                          key={index}
                         >
-                          Select Video
-                        </Link>
-                        <img
-                          src={video.thumbnail}
-                          alt="thumbnail"
-                          style={{ borderRadius: "6px" }}
-                          className="thumbnail mr-3"
-                        />
-                        <div className="video-info">
-                          <div className="video-title mb-2">{video.title}</div>
-                          <div className="video-details d-flex justify-content-between">
-                            <div>{video.resolution}</div>
-                            <div>{video.size}</div>
-                            <div>{video.duration}</div>
+                          <Link
+                            to={"/schdulestreams"}
+                            className="btn btn-new2 select_btn_set"
+                          >
+                            Select Video
+                          </Link>
+                          <img
+                            src={video.thumbnail}
+                            alt="thumbnail"
+                            style={{ borderRadius: "6px" }}
+                            className="thumbnail mr-3"
+                          />
+
+                          <div className="video-info">
+                            <div className="video-title mb-2">
+                              {video.title}
+                            </div>
+                            <div className="video-details d-flex justify-content-between">
+                              {/* <div>{video.resolution}</div> */}
+                              <div>{video.size}</div>
+                              <div>{video.duration}</div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </>
-                  ))}
+                      </>
+                    ))}
                 </div>
               </div>
             )}

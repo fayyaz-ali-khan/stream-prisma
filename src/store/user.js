@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+
 import axios from "axios";
 import { PROFILE_DATA, UPDATE_PROFILE_API } from "../utility/api";
 
@@ -8,6 +9,7 @@ const initialState = {
   error: null,
   updateSuccess: false,
 };
+
 
 const userSlice = createSlice({
   name: "user",
@@ -39,6 +41,7 @@ const userSlice = createSlice({
   },
 });
 
+
 export const { userActions, setUpdateSuccess, setLoading, setUser, setError, logout } =
   userSlice.actions;
 
@@ -66,9 +69,8 @@ export const fetchUserAction = () => {
 
 // updateprofile
 export const updateUserProfileAction = (updatedProfileData) => {
-  return async (dispatch) => {
-    dispatch(setLoading());
-    try {
+
+
       const token = localStorage.getItem('stram_prisma_access_token');
       if (token) {
         axios.defaults.headers.common['Authorization'] = 'Bearer ' + JSON.parse(token);
@@ -91,4 +93,14 @@ export const selectLoading = (state) => state.user.loading;
 export const selectError = (state) => state.user.error;
 export const selectUpdateSuccess = (state) => state.user.updateSuccess;
 
+
+      const request = await axios.get(PROFILE_DATA);
+      let response = request.data.user;
+      dispatch(userActions.login(response));
+    } catch (error) {
+      console.log("Failed to load user profile:", error);
+    }
+  };
+};
+export const userActions = userSlice.actions;
 export default userSlice.reducer;

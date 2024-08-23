@@ -30,7 +30,7 @@ function Register() {
     try {
       setLoading(true);
       let response = await axios.post(REGISTER, register);
-      dispatch(userActions.login(response.data));
+      dispatch(userActions.login(response.data.user));
       localStorage.setItem(
         "stram_prisma_access_token",
         JSON.stringify(response.data.access_token)
