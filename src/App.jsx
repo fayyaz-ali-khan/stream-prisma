@@ -36,8 +36,11 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { useSelector } from "react-redux";
 import axios from "axios";
 
-import {loader as subscriptionDetailsLoader} from './Pages/PlanPage'
-
+import { loader as subscriptionDetailsLoader } from "./Pages/PlanPage";
+import { fetchUserAction } from "./store/user";
+import { useDispatch } from "react-redux";
+import { PROFILE_DATA } from "./utility/api";
+import { useEffect } from "react";
 function App() {
   const loading = useSelector((state) => state.loading.loading);
   const {
@@ -49,12 +52,25 @@ function App() {
     SmallhandleToggleRemove,
   } = UseSidebar();
 
+  let dispatch = useDispatch();
   let token = localStorage.getItem("stram_prisma_access_token");
   if (token) {
     axios.defaults.headers.common["Authorization"] =
       "Bearer " + JSON.parse(token);
+    dispatch(fetchUserAction(PROFILE_DATA));
   }
   let x = 0;
+
+  // const dispatch = useDispatch();
+
+  // useEffect(() => {
+  //   const token = localStorage.getItem("stram_prisma_access_token");
+  //   if (token) {
+  //     axios.defaults.headers.common["Authorization"] = "Bearer " + JSON.parse(token);
+  //     dispatch(fetchUserAction("api/profile"));
+  //   }
+  // }, [dispatch]);
+
 
   return (
     <>
