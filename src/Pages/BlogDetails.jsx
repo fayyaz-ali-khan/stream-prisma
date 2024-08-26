@@ -13,6 +13,10 @@ function BlogDetails() {
       };
 
     const latestBlogs = [
+      {
+        title: "Talha Blog 1",
+        image: Talha_image
+      },
         {
           title: "Latest Blog 1",
           image: sample
